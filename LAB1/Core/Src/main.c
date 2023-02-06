@@ -63,8 +63,9 @@ PortPin L[4] =
 		{ GPIOA,GPIO_PIN_7 }
 };
 
-uint16_t ButtonMatrix = 0;
-uint16_t num = 99;
+uint16_t ButtonMatrix = 0,ButtonMatrix_delay = 0;
+uint16_t num = 99,state = 0;
+uint64_t id = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,60 +120,106 @@ int main(void)
   {
     /* USER CODE END WHILE */
 	  static uint32_t timestamp = 0;
-	  if(HAL_GetTick() >= timestamp)
-	  {
-		  timestamp = HAL_GetTick() + 10;
-		  ReadMatrixButton_1Row();
+	  	  if(HAL_GetTick() >= timestamp)
+	  	  {
+	  		  timestamp = HAL_GetTick() + 10;
+	  		  for (int i = 0; i < 4; ++i)
+	  		  {
+	  			  ReadMatrixButton_1Row();
+	  		  }
+	  		  if (ButtonMatrix && !ButtonMatrix_delay)
+	  		  {
+	  		  switch (ButtonMatrix)
+	  		  {
+	  			case 1://7
+	  				num = 7;
+	  			break;
+	  			case 2://4
+	  				num = 4;
+	  			break;
+	  			case 4://1
+	  				num = 1;
+	  			break;
+	  			case 8://0
+	  				num = 0;
+	  			break;
+	  			case 16://8
+	  				num = 8;
+	  			break;
+	  			case 32://5
+	  				num = 5;
+	  			break;
+	  			case 64://2
+	  				num = 2;
+	  			break;
+	  			case 256://9
+	  				num = 9;
+	  			break;
+	  			case 512://6
+	  				num = 6;
+	  			break;
+	  			case 1024://3
+	  				num = 3;
+	  			break;
+	  			case 4096://clear
+	  				num = 999;
+	  			break;
+	  			case 8192://bs
+	  				num = 9999;
+	  			break;
+	  			case 32768://ok
+	  				num = 111;
+	  			break;
+	  		  }
 
-		  switch (ButtonMatrix)
-		  {
-			case 1://7
-				num = 7;
-			break;
-			case 2://4
-				num = 4;
-			break;
-			case 4://1
-				num = 1;
-			break;
-			case 8://0
-				num = 0;
-			break;
-			case 16://8
-				num = 8;
-			break;
-			case 32://5
-				num = 5;
-			break;
-			case 64://2
-				num = 2;
-			break;
-			case 128://no
-			break;
-			case 4096://9
-				num = 9;
-			break;
-			case 8192://6
-				num = 6;
-			break;
-			case 16384://3
-				num = 3;
-			break;
-			case 32768:
-			break;
-			case 256://clear
-			break;
-			case 512://bs
-			break;
-			case 1024:
-			break;
-			case 2048://ok
-			break;
-			default:
-				num = 99;
-			break;
-		  }
-	  }
+	  		  }
+	  		  switch (state)
+	  		  {
+	  			case 0:
+	  				if (num < 10)//add num
+	  				{
+	  					id += num;
+	  					state = 1;
+	  				}
+	  				if (num == 9999)//bs
+	  				{
+	  					id = id/10;
+	  				}
+	  				if (num == 999)//clear
+	  				{
+	  					id = 0;
+	  				}
+
+	  			break;
+	  			case 1:
+	  				if (num < 10) //add num
+	  				{
+	  					id = id*10 + num;
+	  				}
+	  				if (num == 9999)//bs
+	  				{
+	  					id = id/10;
+	  				}
+	  				if (num == 999)//clear
+	  				{
+	  					id = 0;
+	  				}
+	  				if (num == 111 && id == 64340500065)
+	  				{
+	  					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	  				}
+	  				else if (num == 111)
+	  				{
+	  					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+	  				}
+	  			break;
+	  		  }
+
+
+	  		  id = id%100000000000;
+	  		  num = 99;
+	  		  ButtonMatrix_delay = ButtonMatrix;
+	  	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
