@@ -64,7 +64,7 @@ PortPin L[4] =
 };
 
 uint16_t ButtonMatrix = 0,ButtonMatrix_delay = 0;
-uint16_t num = 99,state = 0;
+uint16_t num;
 uint64_t id = 0;
 /* USER CODE END PV */
 
@@ -74,6 +74,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void ReadMatrixButton_1Row();
+int MatrixButton2Number();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,109 +120,49 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  static uint32_t timestamp = 0;
-	  	  if(HAL_GetTick() >= timestamp)
-	  	  {
-	  		  timestamp = HAL_GetTick() + 10;
-	  		  for (int i = 0; i < 4; ++i)
-	  		  {
-	  			  ReadMatrixButton_1Row();
-	  		  }
-	  		  if (ButtonMatrix && !ButtonMatrix_delay)
-	  		  {
-	  		  switch (ButtonMatrix)
-	  		  {
-	  			case 1://7
-	  				num = 7;
-	  			break;
-	  			case 2://4
-	  				num = 4;
-	  			break;
-	  			case 4://1
-	  				num = 1;
-	  			break;
-	  			case 8://0
-	  				num = 0;
-	  			break;
-	  			case 16://8
-	  				num = 8;
-	  			break;
-	  			case 32://5
-	  				num = 5;
-	  			break;
-	  			case 64://2
-	  				num = 2;
-	  			break;
-	  			case 256://9
-	  				num = 9;
-	  			break;
-	  			case 512://6
-	  				num = 6;
-	  			break;
-	  			case 1024://3
-	  				num = 3;
-	  			break;
-	  			case 4096://clear
-	  				num = 999;
-	  			break;
-	  			case 8192://bs
-	  				num = 9999;
-	  			break;
-	  			case 32768://ok
-	  				num = 111;
-	  			break;
-	  		  }
+	static uint32_t timestamp = 0;
+	if(HAL_GetTick() >= timestamp)
+	{
+		timestamp = HAL_GetTick() + 10;
 
-	  		  }
-	  		  switch (state)
-	  		  {
-	  			case 0:
-	  				if (num < 10)//add num
-	  				{
-	  					id += num;
-	  					state = 1;
-	  				}
-	  				if (num == 9999)//bs
-	  				{
-	  					id = id/10;
-	  				}
-	  				if (num == 999)//clear
-	  				{
-	  					id = 0;
-	  				}
+		ReadMatrixButton_1Row();
 
-	  			break;
-	  			case 1:
-	  				if (num < 10) //add num
-	  				{
-	  					id = id*10 + num;
-	  				}
-	  				if (num == 9999)//bs
-	  				{
-	  					id = id/10;
-	  				}
-	  				if (num == 999)//clear
-	  				{
-	  					id = 0;
-	  				}
-	  				if (num == 111 && id == 64340500065)
-	  				{
-	  					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-	  				}
-	  				else if (num == 111)
-	  				{
-	  					HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-	  				}
-	  			break;
-	  		  }
+		if (ButtonMatrix && !ButtonMatrix_delay)//button matrix rising edge
+		{
+			num = MatrixButton2Number();
 
+			if (num == 10)//clear
+			{
+				id = 0;
+			}
+			else if (num == 11)//bs
+			{
+				id = id/10;
+			}
+			else if (id == 0 && num < 10)//add first num
+			{
+				id += num;
+			}
+			else if (num < 10)
+			{
+				id = id*10 + num;
+			}
 
-	  		  id = id%100000000000;
-	  		  num = 99;
-	  		  ButtonMatrix_delay = ButtonMatrix;
-	  	  }
+			if (id != 64340500065)
+			{
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+			}
+			else if (num == 12)
+			{
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+			}
+
+			id = id%100000000000;
+		}
+	  ButtonMatrix_delay = ButtonMatrix;
+	}//timestamp
     /* USER CODE BEGIN 3 */
-  }
+  }//while
   /* USER CODE END 3 */
 }
 
@@ -384,7 +325,55 @@ void ReadMatrixButton_1Row() {
     X++;
     X %= 4;
 }
+int MatrixButton2Number()
+{
+	switch (ButtonMatrix)
+	{
+		case 1://7
+			return 7;
+			break;
+		case 2://4
+			return 4;
+			break;
+		case 4://1
+			return 1;
+			break;
+		case 8://0
+			return 0;
+			break;
+		case 16://8
+			return 8;
+			break;
+		case 32://5
+			return 5;
+			break;
+		case 64://2
+			return 2;
+			break;
+		case 256://9
+			return 9;
+			break;
+		case 512://6
+			return 6;
+			break;
+		case 1024://3
+			return 3;
+			break;
+		case 4096://clear
+			return 10;
+			break;
+		case 8192://bs
+			return 11;
+			break;
+		case 32768://ok
+			return 12;
+			break;
+		default:
+			return 99;
+			break;
 
+	}
+}
 /* USER CODE END 4 */
 
 /**
